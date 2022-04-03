@@ -1,0 +1,26 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+[packages]
+attrs = "*"
+aiohttp = "*"
+click = "*"
+shell-utils = "*"
+
+[dev-packages]
+black = "*"
+bumpversion = "*"
+coverage = "*"
+cryptography = "*"
+mypy = "*"
+pytest = "*"
+pytest-runner = "*"
+PyYAML = "*"
+Sphinx = "*"
+tox = "*"
+sphinx-autodoc-typehints = "*"
+sphinxcontrib-asyncio = "*"
+pipenv = "*"
+readme = "*"
+twine = "*"

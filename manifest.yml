@@ -1,0 +1,6 @@
+---
+applications:
+- name: nixbot
+  memory: 512M
+  buildpack: https://github.com/cloudfoundry/python-buildpack
+  command: python -m nixbot.cli runserver --host 0.0.0.0 --port $PORT
