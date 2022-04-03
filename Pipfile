@@ -7,6 +7,9 @@ attrs = "*"
 aiohttp = "*"
 click = "*"
 shell-utils = "*"
+mattermostdriver = "*"
+mmpy-bot = "*"
+PyYAML = "*"
 
 [dev-packages]
 black = "*"

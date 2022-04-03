@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
 
 """Main module."""
-from aiohttp import web
+import asyncio
+
+from nixbot.bot import bots
+
+bot_instances = [bot() for bot in bots]
 
 
-async def handle(request):
-    name = request.match_info.get('name', "Anonymous")
-    text = "Hello, " + name
-    return web.Response(text=text)
+def run():
+    loop = asyncio.get_event_loop()
+    tasks = [
+        loop.create_task(bot.run())
+        for bot in bot_instances
+    ]
+    loop.run_until_complete(asyncio.wait(tasks))
 
-
-app = web.Application()
-app.add_routes([web.get('/', handle),
-                web.get('/{name}', handle)])
 
 if __name__ == '__main__':
-    web.run_app(app, host='localhost', port=8000)
+    run()
