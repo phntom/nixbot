@@ -2,7 +2,7 @@ from typing import Optional, Sequence
 
 from mmpy_bot import Bot, Settings, Plugin
 
-import webhook
+from nixbot.extensions import webhook
 from ..utils.health import health, ready
 from ..utils.websocket import patch_event_handler
 

@@ -5,15 +5,18 @@ from typing import Optional
 from mattermostdriver.exceptions import NotEnoughPermissions
 from mmpy_bot import Plugin, Message
 from mmpy_bot.driver import Driver
-from mmpy_bot.settings import Settings
+
+from nixbot.extensions.settings import ExtendedSettings
 
 
 class ExtendedPlugin(Plugin):
     seq = 1
     direct_channels = {}
+    settings = None
 
-    def initialize(self, driver: Driver, settings: Optional[Settings] = None):
+    def initialize(self, driver: Driver, settings: Optional[ExtendedSettings] = None):
         super().initialize(driver, settings)
+        self.settings = settings
         self.on_load(driver)
         return self
 

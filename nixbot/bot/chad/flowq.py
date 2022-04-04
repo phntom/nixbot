@@ -20,10 +20,10 @@ class FlowQ(ExtendedPlugin):
     phantom_user_id = None
 
     def on_load(self, driver: Driver):
-        self.team = driver.teams.get_team_by_name(environ['BOT_TEAM'])['id']
-        self.settings_channel = driver.channels.get_channel_by_name(self.team, environ['SETTINGS_CHANNEL'])['id']
+        self.team = driver.teams.get_team_by_name(self.settings.BOT_TEAM)['id']
+        self.settings_channel = driver.channels.get_channel_by_name(self.team, self.settings.SETTINGS_CHANNEL)['id']
         self.reload_questions()
-        self.phantom_user_id = self.driver.users.get_user_by_username('phantom').get('id')
+        self.phantom_user_id = self.driver.users.get_user_by_username(self.settings.TARGET_USER).get('id')
 
     def reload_questions(self):
         g.questions.clear()

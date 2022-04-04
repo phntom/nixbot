@@ -10,10 +10,9 @@ from pathlib import Path
 import re
 import os
 
-from nixbot.nixbot import app
-
-from aiohttp import web
 import click
+
+from nixbot.nixbot import run
 
 
 @click.group()
@@ -27,7 +26,7 @@ def cli():
 @click.option('--port', default=8000)
 def runserver(host, port):
     """Run the server locally for development."""
-    web.run_app(app, host=host, port=port)
+    run()
 
 
 def add_dev_command(root_cmd):
