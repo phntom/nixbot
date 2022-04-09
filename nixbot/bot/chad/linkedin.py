@@ -53,6 +53,12 @@ class LinkedIn(FlowQ):
 
     @listen_to("restart", IGNORECASE)
     async def start_keyword(self, message: Message):
+        if message.channel_id not in self.channel_targets:
+            log.info("restart message outside of a registered channel")
+            return
+        if message.user_id != self.phantom_user_id:
+            log.info("restart message not from phantom")
+            return
         await self.start(message.channel_id)
 
     async def start(self, channel_id):
@@ -60,8 +66,12 @@ class LinkedIn(FlowQ):
             self.channel_targets[channel_id] = await self.populate_target(channel_id)
         await self.print_question(channel_id, g.specials['init'][0].id)
 
-    @listen_to("reload", IGNORECASE, allowed_users=['phantom'])
+    @listen_to("reload", IGNORECASE)
     async def reload(self, message: Message):
+        if message.user_id != self.phantom_user_id:
+            log.info("restart message not from phantom")
+            await self.direct_reply(message, "You do not have permission to perform this action!", True)
+            return
         self.reload_questions()
         self.driver.reply_to(message, f"reloaded {len(g.questions)} questions.")
 

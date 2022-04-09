@@ -1,5 +1,3 @@
-import asyncio
-import json
 from typing import Optional
 
 from mattermostdriver.exceptions import NotEnoughPermissions
@@ -10,9 +8,12 @@ from nixbot.extensions.settings import ExtendedSettings
 
 
 class ExtendedPlugin(Plugin):
-    seq = 1
     direct_channels = {}
     settings = None
+
+    def __init__(self):
+        super().__init__()
+        self.bot = None
 
     def initialize(self, driver: Driver, settings: Optional[ExtendedSettings] = None):
         super().initialize(driver, settings)
@@ -24,19 +25,7 @@ class ExtendedPlugin(Plugin):
         pass
 
     async def user_typing(self, channel_id: str, parent_post_id: Optional[str] = None):
-        if not parent_post_id:
-            parent_post_id = ''
-        self.seq += 1
-        json_data = json.dumps({
-            "seq": self.seq,
-            "action": "user_typing",
-            "data": {
-                "channel_id": channel_id,
-                "parent_id": parent_post_id,
-            }
-        }).encode('utf8')
-        await self.driver.websocket.websocket.send(json_data)
-        await asyncio.sleep(1)
+        await self.bot.event_handler.user_typing(channel_id, parent_post_id, 1)
 
     async def direct_reply(self, message: Message, response: str, human=True, *nargs, **kwargs):
         if not message.is_direct_message:

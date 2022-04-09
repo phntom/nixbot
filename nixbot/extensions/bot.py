@@ -3,8 +3,9 @@ from typing import Optional, Sequence
 from mmpy_bot import Bot, Settings, Plugin
 
 from nixbot.extensions import webhook
+from .handler import ExtendedHandler
+from .plugin import ExtendedPlugin
 from ..utils.health import health, ready
-from ..utils.websocket import patch_event_handler
 
 
 class ExtendedBot(Bot):
@@ -26,4 +27,11 @@ class ExtendedBot(Bot):
             self.webhook_server = webhook.WEBHOOK
             self.driver.register_webhook_server(webhook.WEBHOOK)
 
-        patch_event_handler(self.event_handler)
+        self.event_handler = ExtendedHandler(self.event_handler)
+
+    def _initialize_plugins(self, plugins: Sequence[Plugin]):
+        for plugin in plugins:
+            plugin.initialize(self.driver, self.settings)
+            if isinstance(plugin, ExtendedPlugin):
+                plugin.bot = self
+        return plugins
