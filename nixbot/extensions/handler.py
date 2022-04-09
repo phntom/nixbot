@@ -1,11 +1,17 @@
 import asyncio
 import json
+import logging
+from collections import defaultdict
 from datetime import datetime
+from time import time
 from typing import Optional, List
 
 from mmpy_bot.event_handler import EventHandler
 
 from nixbot.extensions.websocket import ExtendedWebsocket
+from nixbot.model.user import ExtendedUser
+
+log = logging.getLogger(__name__)
 
 
 class ExtendedHandler(EventHandler):
@@ -18,8 +24,8 @@ class ExtendedHandler(EventHandler):
         self.message_listeners = event_handler.message_listeners
         self.webhook_listeners = event_handler.webhook_listeners
         self._name_matcher = event_handler._name_matcher
-        self.users = {}
-        self.seq = 1
+        self.users = defaultdict(ExtendedUser)
+        self.seq = 2
         self.handler_map = {
             'added_to_team': None,
             'authentication_challenge': None,
@@ -54,11 +60,11 @@ class ExtendedHandler(EventHandler):
             'reaction_removed': None,
             'response': None,
             'role_updated': None,
-            'status_change': None,
+            'status_change': self.handle_status_change,
             'typing': None,
             'update_team': None,
-            'user_added': None,
-            'user_removed': None,
+            'user_added': self.handle_user_added,
+            'user_removed': self.handle_user_removed,
             'user_role_updated': None,
             'user_updated': self.handle_user_updated,
             'dialog_opened': None,
@@ -79,11 +85,11 @@ class ExtendedHandler(EventHandler):
 
     async def handle_hello(self, post):
         user_id = post['broadcast']['user_id']
-        self.users[user_id] = {}
+        self.users[user_id] = ExtendedUser(id=user_id, is_bot=True)
 
     async def mark_user_online(self, user_id, post):
-        self.users[user_id]['active'] = datetime.now()
-        post['post'] = {
+        self.users[user_id].last_activity_at = int(time())
+        post['data']['post'] = {
             'id': '',
             'user_id': user_id,
             'message': 'user is now online',
@@ -91,25 +97,43 @@ class ExtendedHandler(EventHandler):
             'parent_id': '',
             'root_id': '',
         }
-        post['channel_name'] = post['channel_type'] = ''
+        post['data']['channel_name'] = post['data']['channel_type'] = ''
         await self._handle_post(post)
 
     async def handle_status_change(self, post):
         user_id = post['data']['user_id']
         status = post['data']['status']
-        self.users[user_id]['status'] = status
+        self.users[user_id].status = status
         if status == 'online':
             await self.mark_user_online(user_id, post)
 
     async def handle_typing(self, post):
         user_id = post['data']['user_id']
-        self.users[user_id]['typing'] = datetime.now()
+        self.users[user_id].last_typing = datetime.now()
         await self.mark_user_online(user_id, post)
 
+    async def handle_user_added(self, post):
+        user_id = post['user_id']
+        team_id = post['team_id']
+        if user_id not in self.users:
+            self.users[user_id] = ExtendedUser(**self.driver.get_user_info(user_id))
+        self.users[user_id].teams.add(team_id)
+
     async def handle_user_updated(self, post):
-        pass
-        # TODO: add user_updated
-        # {'event': 'user_updated', 'data': {'user': {'id': 'jxs5xm3b37djjfqohbtp4urpho', 'create_at': 1624046154244, 'update_at': 1649523881960, 'delete_at': 0, 'username': 'phntom', 'auth_data': '', 'auth_service': '', 'email': 'phantom@kix.co.il', 'nickname': '', 'first_name': '', 'last_name': '', 'position': '', 'roles': 'system_admin system_user', 'props': {'customStatus': '{"emoji":"palm_tree","text":"On a vacation","duration":"this_week","expires_at":"2022-04-09T20:59:59.999Z"}', 'focalboard_onboardingTourStep': '999', 'focalboard_tourCategory': 'board', 'focalboard_welcomePageViewed': '1'}, 'locale': 'en', 'timezone': {'automaticTimezone': 'Asia/Jerusalem', 'manualTimezone': '', 'useAutomaticTimezone': 'true'}, 'disable_welcome_email': False}}, 'broadcast': {'omit_users': {'jxs5xm3b37djjfqohbtp4urpho': True}, 'user_id': '', 'channel_id': '', 'team_id': ''}, 'seq': 10}
+        user = ExtendedUser(**post['data']['user'])
+        self.users[user.id] = user
+
+    async def handle_user_removed(self, post):
+        user_id = post['user_id']
+        team_id = post['team_id']
+        user = self.users.get(user_id)
+        if not user:
+            log.info(f'handle_user_removed user_id: {user_id} not found. team_id: {team_id}')
+            return
+        user.teams.remove(team_id)
+        if not user.teams:
+            log.info(f'handle_user_removed user_id: {user_id} removed last team team_id: {team_id}')
+            del self.users[user.id]
 
     async def _send_websocket(self, action, data):
         self.seq += 1

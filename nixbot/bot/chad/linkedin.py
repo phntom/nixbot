@@ -1,5 +1,4 @@
 import logging
-from os import environ
 from re import IGNORECASE
 
 from mattermostdriver.exceptions import ResourceNotFound
@@ -46,7 +45,7 @@ class LinkedIn(FlowQ):
             'team_id': message.team_id,
             'user_id': user['id'],
         })
-        user['user_icon'] = f"{environ['EXTERNAL_MM_URL']}{self.driver.default_options['basepath']}" \
+        user['user_icon'] = f"{self.settings.EXTERNAL_MM_URL}{self.driver.default_options['basepath']}" \
                             f"{self.driver.users.endpoint}/{user['id']}/image"
         self.channel_targets[chan['id']] = user
         await self.start(chan['id'])
@@ -93,7 +92,8 @@ class LinkedIn(FlowQ):
                                 "id": a.id,
                                 "name": self.get_text(a.text, t),
                                 "integration": {
-                                    "url": f'{environ["WEBHOOK_HOST"]}/hooks/answer',
+                                    "url": f'{self.settings.WEBHOOK_HOST_URL}:{self.settings.WEBHOOK_HOST_PORT}/hooks/'
+                                           f'answer',
                                     "context": {
                                         "q": q.id,
                                         "a": a.id,
